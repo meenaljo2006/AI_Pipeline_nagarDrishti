@@ -1,14 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
+from routers import analyze
 
 app = FastAPI(
     title="NagarDrishti AI Service",
-    description="AI microservice for civic complaint image classification and NLP analysis",
+    description="AI microservice for civic complaint analysis",
     version="1.0.0",
 )
 
-# Allow Node.js backend to call this service
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,7 +23,6 @@ def root():
         "service": "NagarDrishti AI Service",
         "version": "1.0.0",
         "status": "running",
-        "endpoints": ["/health", "/analyze", "/classify-image", "/analyze-text"],
     }
 
 
@@ -35,3 +34,7 @@ def health_check():
         "service": "AI Service",
         "version": "1.0.0",
     }
+
+
+# Register routers
+app.include_router(analyze.router, tags=["Analysis"])
