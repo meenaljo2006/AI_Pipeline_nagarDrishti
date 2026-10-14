@@ -2,30 +2,24 @@
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
-.Python
 venv/
 env/
-ENV/
-build/
-dist/
 *.egg-info/
 
 # Environment
 .env
-.env.local
+
+# AI models (large files)
+*.pt
+*.pth
+*.onnx
+models/*.pt
+.cache/
 
 # IDE
 .vscode/
 .idea/
-*.swp
 
 # OS
 .DS_Store
 Thumbs.db
-
-# Model cache (large files)
-.cache/
-models/*.pt
-models/*.pth
-yolov8*.pt
