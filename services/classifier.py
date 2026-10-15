@@ -27,20 +27,10 @@ CATEGORY_PROMPTS = {
         "a photo of trash on the ground",
         "a photo of waste dumped on a road",
     ],
-    "streetlight": [
-        "a photo of a broken streetlight",
-        "a photo of a damaged lamp post",
-        "a photo of a faulty street light",
-    ],
     "water_leakage": [
         "a photo of water leaking from a pipe",
         "a photo of a water leak on the street",
         "a photo of a burst water pipe",
-    ],
-    "road_damage": [
-        "a photo of a damaged road",
-        "a photo of a cracked road surface",
-        "a photo of broken pavement",
     ],
     "other": [
         "a photo of a civic issue",
