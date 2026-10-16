@@ -18,23 +18,23 @@ print("CLIP model loaded")
 # Category descriptions — how CLIP will match the image
 CATEGORY_PROMPTS = {
     "pothole": [
-        "a photo of a pothole on a road",
-        "a photo of a hole in the road",
-        "a photo of damaged asphalt",
+        "a photo of a pothole",
+        "a close-up photo of a hole in the asphalt road",
+        "a photo of a damaged road with a deep hole",
     ],
     "garbage": [
-        "a photo of a garbage pile on the street",
-        "a photo of trash on the ground",
-        "a photo of waste dumped on a road",
+        "a photo of a garbage pile",
+        "a photo of trash bags and waste on the ground",
+        "a close-up photo of a pile of garbage",
     ],
     "water_leakage": [
         "a photo of water leaking from a pipe",
-        "a photo of a water leak on the street",
-        "a photo of a burst water pipe",
+        "a photo of water spilling on the street from a broken pipe",
+        "a close-up photo of water leaking",
     ],
     "other": [
-        "a photo of a civic issue",
-        "a photo of a public infrastructure problem",
+        "a photo of a civic infrastructure problem",
+        "a photo of a public facility issue",
     ],
 }
 
