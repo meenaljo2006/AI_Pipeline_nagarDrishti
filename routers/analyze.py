@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from services.classifier import classify_image
+from services.nlp import analyze_text
 
 router = APIRouter()
 
@@ -28,31 +29,11 @@ async def classify_image_endpoint(req: ImageRequest):
 @router.post("/analyze-text")
 async def analyze_text_endpoint(req: TextRequest):
     """
-    Simple keyword-based text analysis (placeholder for now).
-    We'll add Hugging Face NLP here later.
+    Full NLP analysis: sentiment + zero-shot category + urgency + severity.
     """
-    text = (req.description or "").lower()
+    if not req.description:
+        raise HTTPException(status_code=400, detail="description is required")
 
-    category = "other"
-    if any(k in text for k in ["pothole", "gaddha", "pit", "hole"]):
-        category = "pothole"
-    elif any(k in text for k in ["garbage", "trash", "waste", "kachra", "dump"]):
-        category = "garbage"
-    elif any(k in text for k in ["streetlight", "light", "lamp", "bulb"]):
-        category = "streetlight"
-    elif any(k in text for k in ["water", "leak", "pipe", "paani"]):
-        category = "water_leakage"
-    elif any(k in text for k in ["road", "sadak", "damage", "crack"]):
-        category = "road_damage"
-
-    severity = "medium"
-    if any(k in text for k in ["urgent", "danger", "accident", "immediate"]):
-        severity = "high"
-    elif any(k in text for k in ["minor", "small", "little"]):
-        severity = "low"
-
-    return {
-        "category": category,
-        "severity": severity,
-        "keywords": text.split()[:5],
-    }
+    result = analyze_text(req.description)
+    print(f"NLP: {result['category']} | sentiment: {result['sentiment']} | severity: {result['severity']}")
+    return result
