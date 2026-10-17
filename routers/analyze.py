@@ -9,8 +9,10 @@ router = APIRouter()
 class ImageRequest(BaseModel):
     imageUrl: str
 
+
 class TextRequest(BaseModel):
     description: str
+
 
 class AnalyzeRequest(BaseModel):
     imageUrl: str
@@ -19,27 +21,17 @@ class AnalyzeRequest(BaseModel):
 
 @router.post("/classify-image")
 async def classify_image_endpoint(req: ImageRequest):
-    """
-    Classify an image into a civic category using CLIP.
-    """
     if not req.imageUrl:
         raise HTTPException(status_code=400, detail="imageUrl is required")
-
-    result = classify_image(req.imageUrl)
-    return result
+    return classify_image(req.imageUrl)
 
 
 @router.post("/analyze-text")
 async def analyze_text_endpoint(req: TextRequest):
-    """
-    Full NLP analysis: sentiment + zero-shot category + urgency + severity.
-    """
     if not req.description:
         raise HTTPException(status_code=400, detail="description is required")
+    return analyze_text(req.description)
 
-    result = analyze_text(req.description)
-    print(f"NLP: {result['category']} | sentiment: {result['sentiment']} | severity: {result['severity']}")
-    return result
 
 # Category baseline severities
 CATEGORY_BASELINE = {
@@ -49,60 +41,102 @@ CATEGORY_BASELINE = {
     "other": 0.4,
 }
 
+
 @router.post("/analyze")
 async def analyze_complaint(req: AnalyzeRequest):
     """
-    Combined analysis: image classification + NLP + severity assessment.
-    Returns everything the Node.js backend needs.
+    Combined analysis: Image + Text + Cross-Validation + Severity.
     """
-    # 1. Image classification
+    # 1. Run Image Classification
     image_result = classify_image(req.imageUrl)
+    img_cat = image_result["category"]
+    img_conf = image_result["confidence"]
 
-    # 2. Text analysis
+    # 2. Run Text Analysis
     text_result = analyze_text(req.description)
+    txt_cat = text_result["category"]
+    txt_conf = text_result["confidence"]
+    txt_urgency = text_result["urgency_score"]
 
-    # 3. Severity assessment — combine image category + text urgency
-    category = image_result["category"]
-    baseline = CATEGORY_BASELINE.get(category, 0.4)
-    text_urgency = text_result["urgency_score"]
-    image_confidence = image_result["confidence"]
+    # 3. CROSS-VALIDATION LOGIC
+    is_valid = True
+    rejection_reason = None
+    final_category = img_cat
 
-    # Weighted severity score (0.0 - 1.0)
-    # 50% category baseline + 30% text urgency + 20% image confidence
-    severity_score = (
-        0.5 * baseline +
-        0.3 * text_urgency +
-        0.2 * image_confidence
-    )
+    if img_cat == "other" and txt_cat != "other":
+        # Image is unclear, but text is clear. Trust text.
+        final_category = txt_cat
+    elif img_cat != "other" and txt_cat == "other":
+        # Image is clear, text is vague. Trust image.
+        final_category = img_cat
+    elif img_cat != "other" and txt_cat != "other":
+        # Both are clear. Check for mismatch.
+        if img_cat != txt_cat:
+            is_valid = False
+            rejection_reason = f"Image shows '{img_cat}' but text says '{txt_cat}'."
+            final_category = img_cat # Default to image category
+    elif img_cat == "other" and txt_cat == "other":
+        # Neither is clear
+        is_valid = False
+        rejection_reason = "Could not identify the issue from image or text."
 
-    # Convert to label
-    if severity_score >= 0.65:
-        severity = "high"
-    elif severity_score >= 0.4:
-        severity = "medium"
+    # 4. SEVERITY ASSESSMENT (Only if valid)
+    severity = "low"
+    severity_score = 0.0
+    baseline = 0.0 # Default if invalid
+
+    if is_valid:
+        baseline = CATEGORY_BASELINE.get(final_category, 0.4)
+        
+        # Weighted Score: 50% Category + 30% Text Urgency + 20% Image Confidence
+        severity_score = (
+            (0.5 * baseline) + 
+            (0.3 * txt_urgency) + 
+            (0.2 * img_conf)
+        )
+        
+        if severity_score >= 0.65:
+            severity = "high"
+        elif severity_score >= 0.4:
+            severity = "medium"
+        else:
+            severity = "low"
+
+    # --- BEAUTIFUL LOGGING SECTION ---
+    print("\n---------------------------------------------------------")
+    print("STEP 1: AI PIPELINE STARTED (Python Microservice)")
+    print("---------------------------------------------------------")
+    print(f"[CLIP MODEL] Detected Image Category: {img_cat} (Confidence: {img_conf})")
+    print(f"[NLP MODEL]  Detected Text Category: {txt_cat} (Confidence: {txt_conf})")
+
+    print("\n---------------------------------------------------------")
+    print("STEP 2: CROSS-VALIDATION")
+    print("---------------------------------------------------------")
+    if is_valid:
+        print(f"Match! Image and Text align on '{final_category}'. Validating...")
     else:
-        severity = "low"
+        print(f"Mismatch! {rejection_reason}")
 
-    # Determine if valid (complaint is real)
-    is_valid = (
-        image_result["confidence"] >= 0.35 and
-        category != "other"
-    )
+    if is_valid:
+        print("\n---------------------------------------------------------")
+        print("STEP 3: SEVERITY ASSESSMENT")
+        print("---------------------------------------------------------")
+        print(f"Urgency Score: {txt_urgency} | Category Baseline: {baseline}")
+        print(f"Final Severity: {severity.upper()} (Score: {severity_score:.2f})")
 
+    # 5. Build Final Response
     result = {
         "isValid": is_valid,
-        "category": category,
-        "imageConfidence": image_result["confidence"],
-        "imageScores": image_result.get("all_scores", {}),
-        "textCategory": text_result["category"],
-        "textConfidence": text_result["confidence"],
+        "rejectionReason": rejection_reason,
+        "category": final_category,
+        "imageCategory": img_cat,
+        "textCategory": txt_cat,
+        "imageConfidence": img_conf,
         "keywords": text_result["keywords"],
         "sentiment": text_result["sentiment"],
-        "sentimentScore": text_result["sentiment_score"],
-        "urgencyScore": text_result["urgency_score"],
+        "urgencyScore": txt_urgency,
         "severityScore": round(severity_score, 3),
         "severity": severity,
     }
-
-    print(f"ANALYZE: {category} | severity: {severity} ({severity_score:.2f}) | valid: {is_valid}")
+    
     return result
