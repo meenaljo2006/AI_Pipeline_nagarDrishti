@@ -178,7 +178,7 @@ uvicorn main:app --reload --port 8000
 The following endpoint list reflects the proposed API in the project
 notes. Confirm each route and its schema in `main.py` and `/docs`.
 
-### `1. GET /health` --- health check
+### 1. `GET /health` --- health check
 
 **Purpose:** check whether the service is responding.
 
@@ -189,7 +189,7 @@ http://localhost:8000/health
 ```
 A basic health endpoint may return a status such as `{"status":"ok"}`. 
 
-### `2. POST /classify-image` --- image category prediction
+### 2. `POST /classify-image` --- image category prediction
 
 **Purpose:** classify an image into one of the candidate civic
 categories configured in the application.
@@ -216,7 +216,7 @@ Response fields, depending on implementation:
 }
 ```
 
-### `3. POST /analyze-text` --- description analysis
+### 3. `POST /analyze-text` --- description analysis
 
 **Purpose:** analyze a citizen's text description.
 
@@ -257,7 +257,7 @@ For example:
 }
 ```
 
-### `4. POST /analyze` --- combined complaint analysis
+### 4. `POST /analyze` --- combined complaint analysis
 
 **Purpose:** combine image and description analysis, cross-validate the
 category, and calculate a final validation/severity result according to
