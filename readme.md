@@ -175,8 +175,7 @@ uvicorn main:app --reload --port 8000
 
 ## API reference
 
-The following endpoint list reflects the proposed API in the project
-notes. Confirm each route and its schema in `main.py` and `/docs`.
+The following endpoint list reflects the API in the project.
 
 ### 1. `GET /health` --- health check
 
