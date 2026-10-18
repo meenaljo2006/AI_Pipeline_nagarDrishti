@@ -63,22 +63,25 @@ async def analyze_complaint(req: AnalyzeRequest):
     rejection_reason = None
     final_category = img_cat
 
-    if img_cat == "other" and txt_cat != "other":
-        # Image is unclear, but text is clear. Trust text.
-        final_category = txt_cat
+    if img_cat == "other":
+        # Rule 1: Image MUST clearly show a civic issue.
+        # Even if text says "pothole", we reject because the image is invalid.
+        is_valid = False
+        rejection_reason = "Could not identify the issue. The image does not clearly show a pothole, garbage, or water leakage."
+        final_category = "other"
+
     elif img_cat != "other" and txt_cat == "other":
-        # Image is clear, text is vague. Trust image.
+        # Rule 2: Image is clear, but text is vague (e.g., "Fix this").
+        # We trust the image because visual proof is strong.
         final_category = img_cat
+
     elif img_cat != "other" and txt_cat != "other":
-        # Both are clear. Check for mismatch.
+        # Rule 3: Both are clear. Check if they match.
         if img_cat != txt_cat:
+            # Mismatch 
             is_valid = False
             rejection_reason = f"Image shows '{img_cat}' but text says '{txt_cat}'."
             final_category = img_cat # Default to image category
-    elif img_cat == "other" and txt_cat == "other":
-        # Neither is clear
-        is_valid = False
-        rejection_reason = "Could not identify the issue from image or text."
 
     # 4. SEVERITY ASSESSMENT (Only if valid)
     severity = "low"
